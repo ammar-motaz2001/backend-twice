@@ -12,13 +12,13 @@ const initDatabase = async () => {
     console.log('🔧 Initializing database...\n');
     
     // Check if admin user already exists
-    const adminExists = await User.findOne({ username: 'admin' });
-    
-    if (!adminExists) {
+    let admin = await User.findOne({ username: 'admin' }).select('+password');
+
+    if (!admin) {
       // Create admin user
-      const admin = await User.create({
+      admin = await User.create({
         username: 'admin',
-        password: 'admin123',
+        password: 'admin',
         name: 'المدير',
         email: 'admin@salon.com',
         phone: '01000000000',
@@ -42,9 +42,12 @@ const initDatabase = async () => {
       });
       console.log('✅ Admin user created');
       console.log(`   Username: ${admin.username}`);
-      console.log('   Password: admin123\n');
+      console.log('   Password: admin\n');
     } else {
-      console.log('ℹ️  Admin user already exists\n');
+      // Ensure existing admin has password "admin"
+      admin.password = 'admin';
+      await admin.save();
+      console.log('✅ Admin user updated (username: admin, password: admin)\n');
     }
     
     // Check if cashier user already exists
@@ -103,7 +106,7 @@ const initDatabase = async () => {
     console.log('✅ Database initialized successfully!');
     console.log('════════════════════════════════════════════════');
     console.log('\n📝 Default Users:');
-    console.log('   Admin:   username: admin   | password: admin123');
+    console.log('   Admin:   username: admin   | password: admin');
     console.log('   Cashier: username: cashier | password: cashier123');
     console.log('\n⚠️  IMPORTANT: Change default passwords in production!\n');
     
