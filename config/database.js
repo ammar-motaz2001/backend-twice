@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI ='mongodb://localhost:27017/beauty-center';
+const MONGODB_URI ='mongodb+srv://Omar:3RJhZkPs46PGLVHK@cluster0.kjljrib.mongodb.net/beauty-center';
 
 const connectDB = async () => {
   try {
