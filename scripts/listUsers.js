@@ -2,7 +2,6 @@
  * List all users in the database (for debugging).
  * Run: node scripts/listUsers.js
  */
-require('dotenv').config();
 const connectDB = require('../config/database');
 const User = require('../models/User');
 

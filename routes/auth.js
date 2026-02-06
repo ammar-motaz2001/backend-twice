@@ -5,10 +5,13 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { protect } = require('../middleware/auth');
 const User = require('../models/User');
 
+const JWT_SECRET = 'beauty-salon-jwt-secret-key';
+const JWT_EXPIRE = '7d';
+
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d',
+  return jwt.sign({ id }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRE,
   });
 };
 

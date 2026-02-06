@@ -3,15 +3,12 @@
  * Run with: node scripts/addSuppliersPermission.js
  */
 
-require('dotenv').config();
-const mongoose = require('mongoose');
+const connectDB = require('../config/database');
 const User = require('../models/User');
 
 async function addSuppliersPermission() {
   try {
-    // Connect to MongoDB
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/beauty-salon';
-    await mongoose.connect(mongoURI);
+    await connectDB();
     
     console.log('');
     console.log('════════════════════════════════════════════════');

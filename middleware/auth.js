@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const JWT_SECRET = 'beauty-salon-jwt-secret-key';
+
 // Protect routes - Verify JWT token
 exports.protect = async (req, res, next) => {
   let token;
@@ -20,7 +22,7 @@ exports.protect = async (req, res, next) => {
 
   try {
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
 
     // Get user from token
     req.user = await User.findById(decoded.id).select('-password');

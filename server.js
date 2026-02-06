@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -30,16 +29,13 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: '*',
   credentials: true,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Logging middleware (only in development)
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+app.use(morgan('dev'));
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -79,14 +75,14 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5001;
+const PORT = 5001;
 const server = app.listen(PORT, () => {
   console.log('');
   console.log('════════════════════════════════════════════════');
   console.log('  💅 Beauty Salon Management System API');
   console.log('════════════════════════════════════════════════');
   console.log(`  🚀 Server running on port ${PORT}`);
-  console.log(`  🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('  🌍 Environment: development');
   console.log(`  📡 API: http://localhost:${PORT}`);
   console.log(`  ✅ Health: http://localhost:${PORT}/health`);
   console.log('════════════════════════════════════════════════');
