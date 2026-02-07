@@ -18,7 +18,7 @@ const appointmentSchema = new mongoose.Schema({
   duration: String,
   status: {
     type: String,
-    enum: ['مؤكد', 'مكتمل', 'ملغي', 'قيد الانتظار'],
+    enum: ['مؤكد', 'مكتمل', 'ملغي', 'قيد الانتظار', 'confirmed', 'completed', 'cancelled', 'pending'],
     default: 'مؤكد',
   },
   date: {
