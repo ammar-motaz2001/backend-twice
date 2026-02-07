@@ -6,37 +6,48 @@ const Sale = require('../models/Sale');
 const Shift = require('../models/Shift');
 const Customer = require('../models/Customer');
 
-// Map sale paymentMethod to shift salesDetails key
+// Map sale paymentMethod to shift salesDetails key (case-insensitive)
 const paymentToShiftKey = (method) => {
-  if (method === 'نقدي' || method === 'cash') return 'cash';
-  if (method === 'بطاقة' || method === 'card') return 'card';
-  if (method === 'InstaPay') return 'instapay';
+  const m = (method || '').toString().toLowerCase();
+  if (m === 'نقدي' || m === 'cash') return 'cash';
+  if (m === 'بطاقة' || m === 'card') return 'card';
+  if (m === 'instapay') return 'instapay';
   return 'cash';
 };
 
 const addSaleToOpenShift = async (shiftId, amount, paymentMethod) => {
+  const shift = await Shift.findById(shiftId).lean();
+  if (!shift) return;
   const key = paymentToShiftKey(paymentMethod);
-  await Shift.findByIdAndUpdate(shiftId, {
-    $inc: {
-      totalSales: amount,
-      [`salesDetails.${key}`]: amount,
-    },
-  });
+  const details = shift.salesDetails || { cash: 0, card: 0, instapay: 0 };
+  const newTotal = (shift.totalSales || 0) + amount;
+  const newDetails = {
+    cash: details.cash || 0,
+    card: details.card || 0,
+    instapay: details.instapay || 0,
+  };
+  newDetails[key] = (newDetails[key] || 0) + amount;
+  await Shift.updateOne(
+    { _id: shiftId },
+    { $set: { totalSales: newTotal, salesDetails: newDetails } },
+  );
 };
 
 const subtractSaleFromOpenShift = async (shiftId, amount, paymentMethod) => {
-  const key = paymentToShiftKey(paymentMethod);
-  const shift = await Shift.findById(shiftId);
+  const shift = await Shift.findById(shiftId).lean();
   if (!shift) return;
-  const newTotal = Math.max(0, (shift.totalSales || 0) - amount);
+  const key = paymentToShiftKey(paymentMethod);
   const details = shift.salesDetails || { cash: 0, card: 0, instapay: 0 };
-  const newDetail = Math.max(0, (details[key] || 0) - amount);
-  await Shift.findByIdAndUpdate(shiftId, {
-    $set: {
-      totalSales: newTotal,
-      [`salesDetails.${key}`]: newDetail,
-    },
-  });
+  const newTotal = Math.max(0, (shift.totalSales || 0) - amount);
+  const newDetails = {
+    cash: Math.max(0, (details.cash || 0) - (key === 'cash' ? amount : 0)),
+    card: Math.max(0, (details.card || 0) - (key === 'card' ? amount : 0)),
+    instapay: Math.max(0, (details.instapay || 0) - (key === 'instapay' ? amount : 0)),
+  };
+  await Shift.updateOne(
+    { _id: shiftId },
+    { $set: { totalSales: newTotal, salesDetails: newDetails } },
+  );
 };
 
 // @route   GET /api/sales
