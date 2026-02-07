@@ -23,7 +23,7 @@ const saleSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['مكتمل', 'قيد الانتظار', 'ملغي'],
+    enum: ['مكتمل', 'قيد الانتظار', 'ملغي', 'completed', 'pending', 'cancelled'],
     default: 'مكتمل',
   },
   date: {
