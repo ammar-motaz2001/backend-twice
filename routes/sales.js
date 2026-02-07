@@ -14,20 +14,29 @@ const paymentToShiftKey = (method) => {
   return 'cash';
 };
 
-const addSaleToOpenShift = async (shift, amount, paymentMethod) => {
+const addSaleToOpenShift = async (shiftId, amount, paymentMethod) => {
   const key = paymentToShiftKey(paymentMethod);
-  shift.totalSales = (shift.totalSales || 0) + amount;
-  if (!shift.salesDetails) shift.salesDetails = { cash: 0, card: 0, instapay: 0 };
-  shift.salesDetails[key] = (shift.salesDetails[key] || 0) + amount;
-  await shift.save();
+  await Shift.findByIdAndUpdate(shiftId, {
+    $inc: {
+      totalSales: amount,
+      [`salesDetails.${key}`]: amount,
+    },
+  });
 };
 
-const subtractSaleFromOpenShift = async (shift, amount, paymentMethod) => {
+const subtractSaleFromOpenShift = async (shiftId, amount, paymentMethod) => {
   const key = paymentToShiftKey(paymentMethod);
-  shift.totalSales = Math.max(0, (shift.totalSales || 0) - amount);
-  if (!shift.salesDetails) shift.salesDetails = { cash: 0, card: 0, instapay: 0 };
-  shift.salesDetails[key] = Math.max(0, (shift.salesDetails[key] || 0) - amount);
-  await shift.save();
+  const shift = await Shift.findById(shiftId);
+  if (!shift) return;
+  const newTotal = Math.max(0, (shift.totalSales || 0) - amount);
+  const details = shift.salesDetails || { cash: 0, card: 0, instapay: 0 };
+  const newDetail = Math.max(0, (details[key] || 0) - amount);
+  await Shift.findByIdAndUpdate(shiftId, {
+    $set: {
+      totalSales: newTotal,
+      [`salesDetails.${key}`]: newDetail,
+    },
+  });
 };
 
 // @route   GET /api/sales
@@ -86,7 +95,7 @@ router.post('/', protect, checkPermission('sales'), asyncHandler(async (req, res
   const openShift = await Shift.findOne({ status: 'open' })
     .sort('-date');
   if (openShift && saleAmount > 0) {
-    await addSaleToOpenShift(openShift, saleAmount, paymentMethod);
+    await addSaleToOpenShift(openShift._id, saleAmount, paymentMethod);
   }
 
   // Update customer stats if customer phone is provided
@@ -141,10 +150,10 @@ router.put('/:id', protect, checkPermission('sales'), asyncHandler(async (req, r
 
   if (openShift && (oldAmount > 0 || newAmount > 0)) {
     if (oldAmount > 0) {
-      await subtractSaleFromOpenShift(openShift, oldAmount, oldPayment);
+      await subtractSaleFromOpenShift(openShift._id, oldAmount, oldPayment);
     }
     if (newAmount > 0) {
-      await addSaleToOpenShift(openShift, newAmount, newPayment);
+      await addSaleToOpenShift(openShift._id, newAmount, newPayment);
     }
   }
 
@@ -176,7 +185,7 @@ router.delete('/:id', protect, checkPermission('sales'), asyncHandler(async (req
   if (saleAmount > 0) {
     const openShift = await Shift.findOne({ status: 'open' }).sort('-date');
     if (openShift) {
-      await subtractSaleFromOpenShift(openShift, saleAmount, paymentMethod);
+      await subtractSaleFromOpenShift(openShift._id, saleAmount, paymentMethod);
     }
   }
 
