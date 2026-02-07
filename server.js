@@ -6,6 +6,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 // Import routes
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
 const serviceRoutes = require('./routes/services');
 const customerRoutes = require('./routes/customers');
 const appointmentRoutes = require('./routes/appointments');
@@ -48,6 +49,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/appointments', appointmentRoutes);
