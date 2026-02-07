@@ -79,6 +79,60 @@ router.post('/', protect, adminOnly, asyncHandler(async (req, res) => {
   });
 }));
 
+// @route   PUT /api/users/:id/change-password
+// @desc    Change user password (admin: any user; user: own with currentPassword)
+// @access  Private
+router.put('/:id/change-password', protect, asyncHandler(async (req, res) => {
+  const { newPassword, currentPassword } = req.body;
+  const targetId = req.params.id;
+  const isAdmin = req.user.role === 'admin';
+  const isOwn = req.user._id.toString() === targetId;
+
+  if (!newPassword || newPassword.trim().length < 5) {
+    return res.status(400).json({
+      success: false,
+      error: 'كلمة المرور الجديدة مطلوبة (5 أحرف على الأقل)',
+    });
+  }
+
+  const user = await User.findById(targetId).select('+password');
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'المستخدم غير موجود',
+    });
+  }
+
+  if (isOwn && !isAdmin) {
+    if (!currentPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'كلمة المرور الحالية مطلوبة لتغيير كلمة المرور',
+      });
+    }
+    const isCorrect = await user.comparePassword(currentPassword);
+    if (!isCorrect) {
+      return res.status(401).json({
+        success: false,
+        error: 'كلمة المرور الحالية غير صحيحة',
+      });
+    }
+  } else if (!isAdmin) {
+    return res.status(403).json({
+      success: false,
+      error: 'غير مصرح لك بتغيير كلمة مرور مستخدم آخر',
+    });
+  }
+
+  user.password = newPassword.trim();
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'تم تحديث كلمة المرور بنجاح',
+  });
+}));
+
 // @route   PUT /api/users/:id
 // @desc    Update user
 // @access  Private (Admin only)
