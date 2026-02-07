@@ -19,14 +19,15 @@ const addSaleToOpenShift = async (shiftId, amount, paymentMethod) => {
   const shift = await Shift.findById(shiftId).lean();
   if (!shift) return;
   const key = paymentToShiftKey(paymentMethod);
-  const details = shift.salesDetails || { cash: 0, card: 0, instapay: 0 };
-  const newTotal = (shift.totalSales || 0) + amount;
+  const details = shift.salesDetails || { cash: 0, card: 0, instapay: 0, total: 0 };
   const newDetails = {
     cash: details.cash || 0,
     card: details.card || 0,
     instapay: details.instapay || 0,
   };
   newDetails[key] = (newDetails[key] || 0) + amount;
+  newDetails.total = newDetails.cash + newDetails.card + newDetails.instapay;
+  const newTotal = (shift.totalSales || 0) + amount;
   await Shift.updateOne(
     { _id: shiftId },
     { $set: { totalSales: newTotal, salesDetails: newDetails } },
@@ -37,13 +38,14 @@ const subtractSaleFromOpenShift = async (shiftId, amount, paymentMethod) => {
   const shift = await Shift.findById(shiftId).lean();
   if (!shift) return;
   const key = paymentToShiftKey(paymentMethod);
-  const details = shift.salesDetails || { cash: 0, card: 0, instapay: 0 };
-  const newTotal = Math.max(0, (shift.totalSales || 0) - amount);
+  const details = shift.salesDetails || { cash: 0, card: 0, instapay: 0, total: 0 };
   const newDetails = {
     cash: Math.max(0, (details.cash || 0) - (key === 'cash' ? amount : 0)),
     card: Math.max(0, (details.card || 0) - (key === 'card' ? amount : 0)),
     instapay: Math.max(0, (details.instapay || 0) - (key === 'instapay' ? amount : 0)),
   };
+  newDetails.total = newDetails.cash + newDetails.card + newDetails.instapay;
+  const newTotal = Math.max(0, (shift.totalSales || 0) - amount);
   await Shift.updateOne(
     { _id: shiftId },
     { $set: { totalSales: newTotal, salesDetails: newDetails } },

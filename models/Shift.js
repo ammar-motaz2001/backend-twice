@@ -40,6 +40,7 @@ const shiftSchema = new mongoose.Schema({
     cash: { type: Number, default: 0 },
     card: { type: Number, default: 0 },
     instapay: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
   },
 }, {
   timestamps: true,

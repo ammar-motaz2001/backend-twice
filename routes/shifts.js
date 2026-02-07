@@ -23,11 +23,19 @@ router.get('/', protect, checkPermission('shifts'), asyncHandler(async (req, res
 }));
 
 // @route   POST /api/shifts
-// @desc    Create new shift
+// @desc    Create new shift (always starts with zero sales)
 // @access  Private
 router.post('/', protect, checkPermission('shifts'), asyncHandler(async (req, res) => {
-  const shift = await Shift.create(req.body);
-  
+  const body = { ...req.body };
+  body.totalSales = 0;
+  body.salesDetails = {
+    cash: 0,
+    card: 0,
+    instapay: 0,
+    total: 0,
+  };
+  const shift = await Shift.create(body);
+
   res.status(201).json({
     success: true,
     data: shift,
@@ -35,26 +43,30 @@ router.post('/', protect, checkPermission('shifts'), asyncHandler(async (req, re
 }));
 
 // @route   PUT /api/shifts/:id
-// @desc    Update shift
+// @desc    Update shift (closing keeps totalSales/salesDetails; client cannot overwrite them)
 // @access  Private
 router.put('/:id', protect, checkPermission('shifts'), asyncHandler(async (req, res) => {
-  let shift = await Shift.findById(req.params.id);
-  
+  const shift = await Shift.findById(req.params.id);
+
   if (!shift) {
     return res.status(404).json({
       success: false,
       error: 'الوردية غير موجودة',
     });
   }
-  
-  shift = await Shift.findByIdAndUpdate(req.params.id, req.body, {
+
+  const body = { ...req.body };
+  delete body.totalSales;
+  delete body.salesDetails;
+
+  const updated = await Shift.findByIdAndUpdate(req.params.id, body, {
     new: true,
     runValidators: true,
   });
-  
+
   res.status(200).json({
     success: true,
-    data: shift,
+    data: updated,
   });
 }));
 
