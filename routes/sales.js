@@ -6,12 +6,13 @@ const Sale = require('../models/Sale');
 const Shift = require('../models/Shift');
 const Customer = require('../models/Customer');
 
-// Map sale paymentMethod to shift salesDetails key (case-insensitive)
+// Map sale paymentMethod to shift salesDetails key (all: cash, card, instapay)
 const paymentToShiftKey = (method) => {
-  const m = (method || '').toString().toLowerCase();
-  if (m === 'نقدي' || m === 'cash') return 'cash';
-  if (m === 'بطاقة' || m === 'card') return 'card';
-  if (m === 'instapay') return 'instapay';
+  const m = (method || '').toString().trim();
+  const lower = m.toLowerCase();
+  if (m === 'نقدي' || lower === 'cash') return 'cash';
+  if (m === 'بطاقة' || lower === 'card') return 'card';
+  if (m === 'InstaPay' || lower === 'instapay') return 'instapay';
   return 'cash';
 };
 
