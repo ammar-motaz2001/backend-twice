@@ -6,24 +6,18 @@ const attendanceSchema = new mongoose.Schema({
     ref: 'Employee',
     required: true,
   },
-  employeeName: {
-    type: String,
-    required: [true, 'اسم الموظف مطلوب'],
-  },
+  employeeName: { type: String, default: '' },
   name: String,
   position: String,
-  checkIn: {
-    type: String,
-    required: [true, 'وقت الدخول مطلوب'],
-  },
-  checkOut: String,
+  checkIn: { type: String, default: '' },
+  checkOut: { type: String, default: '' },
   workHours: {
     type: Number,
     default: 0,
   },
   status: {
     type: String,
-    enum: ['حاضر', 'غائب', 'تأخير', 'إجازة'],
+    enum: ['حاضر', 'غائب', 'تأخير', 'إجازة', 'present', 'absent', 'delay', 'leave'],
     default: 'حاضر',
   },
   date: {
