@@ -58,7 +58,7 @@ router.get('/supplier/:supplierId', protect, asyncHandler(async (req, res) => {
 // @desc    Create new purchase invoice
 // @access  Private
 router.post('/', protect, asyncHandler(async (req, res) => {
-  const { supplier: supplierId, items, paidAmount } = req.body;
+  const { supplier: supplierId, items, paidAmount, wholesaleAmount } = req.body;
   
   // Get supplier
   const supplier = await Supplier.findById(supplierId);
@@ -97,6 +97,7 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     supplierName: supplier.name,
     items: processedItems,
     totalAmount,
+    wholesaleAmount: wholesaleAmount ?? 0,
     paidAmount: paidAmount || 0,
   });
   

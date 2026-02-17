@@ -46,6 +46,11 @@ const purchaseInvoiceSchema = new mongoose.Schema({
     required: true,
     min: [0, 'المبلغ الإجمالي يجب أن يكون موجباً'],
   },
+  wholesaleAmount: {
+    type: Number,
+    default: 0,
+    min: [0, 'مبلغ الجمله يجب أن يكون موجباً'],
+  },
   paidAmount: {
     type: Number,
     default: 0,
