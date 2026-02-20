@@ -58,18 +58,22 @@ router.get('/supplier/:supplierId', protect, asyncHandler(async (req, res) => {
 // @desc    Create new purchase invoice
 // @access  Private
 router.post('/', protect, asyncHandler(async (req, res) => {
-  const { supplier: supplierId, items, paidAmount, wholesaleAmount } = req.body;
-  
+  const { supplier: supplierId, items, wholesaleAmount } = req.body;
+  // Accept مبلغ البيع from paidAmount or saleAmount (مبلغ البيع), ensure number
+  const paidAmount = Number(
+    req.body.paidAmount ?? req.body.saleAmount ?? req.body.paid_amount ?? 0
+  );
+
   // Get supplier
   const supplier = await Supplier.findById(supplierId);
-  
+
   if (!supplier) {
     return res.status(404).json({
       success: false,
       error: 'التاجر غير موجود',
     });
   }
-  
+
   // Calculate total amount
   let totalAmount = 0;
   const processedItems = items.map(item => {
@@ -80,16 +84,16 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       totalPrice: itemTotal,
     };
   });
-  
+
   // Generate invoice number
   const lastInvoice = await PurchaseInvoice.findOne().sort('-invoiceNumber');
   let invoiceNumber = 'PI-0001';
-  
+
   if (lastInvoice && lastInvoice.invoiceNumber) {
     const lastNumber = parseInt(lastInvoice.invoiceNumber.split('-')[1]);
     invoiceNumber = `PI-${String(lastNumber + 1).padStart(4, '0')}`;
   }
-  
+
   // Create invoice
   const invoice = await PurchaseInvoice.create({
     ...req.body,
@@ -98,12 +102,13 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     items: processedItems,
     totalAmount,
     wholesaleAmount: wholesaleAmount ?? 0,
-    paidAmount: paidAmount || 0,
+    paidAmount: Number.isNaN(paidAmount) ? 0 : Math.max(0, paidAmount),
   });
-  
+
   // Update supplier totals and balance
+  const paid = Number.isNaN(paidAmount) ? 0 : Math.max(0, paidAmount);
   supplier.totalPurchases += totalAmount;
-  supplier.totalPaid += (paidAmount || 0);
+  supplier.totalPaid += paid;
   supplier.balance = supplier.totalPurchases - supplier.totalPaid;
   await supplier.save();
   
@@ -118,18 +123,26 @@ router.post('/', protect, asyncHandler(async (req, res) => {
 // @access  Private
 router.put('/:id', protect, asyncHandler(async (req, res) => {
   let invoice = await PurchaseInvoice.findById(req.params.id);
-  
+
   if (!invoice) {
     return res.status(404).json({
       success: false,
       error: 'الفاتورة غير موجودة',
     });
   }
-  
+
+  // Accept مبلغ البيع from paidAmount or saleAmount when updating
+  const incomingPaid =
+    req.body.paidAmount ?? req.body.saleAmount ?? req.body.paid_amount;
+  if (incomingPaid !== undefined) {
+    const paid = Number(incomingPaid);
+    req.body.paidAmount = Number.isNaN(paid) ? 0 : Math.max(0, paid);
+  }
+
   const oldTotalAmount = invoice.totalAmount;
   const oldPaidAmount = invoice.paidAmount;
   const oldSupplierId = invoice.supplier;
-  
+
   // Recalculate if items changed
   if (req.body.items) {
     let totalAmount = 0;
