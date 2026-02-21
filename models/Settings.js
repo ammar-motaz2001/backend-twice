@@ -17,9 +17,12 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: 'ar',
   },
+  // وقت البداية ووقت النهاية - للإعدادات العامة (dynamic)
+  startTime: { type: String, default: '' },
+  endTime: { type: String, default: '' },
   workingHours: {
-    start: String,
-    end: String,
+    start: { type: String, default: '' },
+    end: { type: String, default: '' },
   },
   notifications: {
     type: Boolean,
@@ -36,7 +39,8 @@ const settingsSchema = new mongoose.Schema({
     showEmail: { type: Boolean, default: true },
     footer: String,
     autoNumber: { type: Boolean, default: true },
-    footerText: String,
+    // نص تذييل الفاتورة (dynamic)
+    footerText: { type: String, default: '' },
   },
   businessName: String,
   businessPhone: String,
@@ -45,6 +49,17 @@ const settingsSchema = new mongoose.Schema({
   timezone: String,
 }, {
   timestamps: true,
+});
+
+// Keep startTime/endTime and workingHours in sync (dynamic الإعدادات العامة)
+settingsSchema.pre('save', function(next) {
+  if (this.startTime !== undefined && this.startTime !== '')
+    this.workingHours.start = this.startTime;
+  if (this.endTime !== undefined && this.endTime !== '')
+    this.workingHours.end = this.endTime;
+  if (this.workingHours?.start !== undefined) this.startTime = this.workingHours.start;
+  if (this.workingHours?.end !== undefined) this.endTime = this.workingHours.end;
+  next();
 });
 
 module.exports = mongoose.model('Settings', settingsSchema);

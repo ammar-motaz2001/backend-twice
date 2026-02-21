@@ -16,13 +16,51 @@ router.get('/', protect, asyncHandler(async (req, res) => {
       shopName: 'صالون التجميل',
       currency: 'EGP',
       language: 'ar',
+      startTime: '',
+      endTime: '',
+      workingHours: { start: '', end: '' },
+      invoiceSettings: {
+        showLogo: true,
+        showAddress: true,
+        showPhone: true,
+        showEmail: true,
+        autoNumber: true,
+        footerText: '',
+      },
     });
   }
-  
+
   res.status(200).json({
     success: true,
     data: settings,
   });
+}));
+
+// @route   GET /api/settings/display
+// @desc    Get display settings (startTime, endTime, invoice footer) for dynamic use
+// @access  Private
+router.get('/display', protect, asyncHandler(async (req, res) => {
+  const settings = await Settings.findOne().select(
+    'startTime endTime workingHours invoiceSettings.footerText shopName address phone'
+  );
+  const data = settings
+    ? {
+        startTime: settings.startTime ?? settings.workingHours?.start ?? '',
+        endTime: settings.endTime ?? settings.workingHours?.end ?? '',
+        footerText: settings.invoiceSettings?.footerText ?? '',
+        shopName: settings.shopName,
+        address: settings.address,
+        phone: settings.phone,
+      }
+    : {
+        startTime: '',
+        endTime: '',
+        footerText: '',
+        shopName: '',
+        address: '',
+        phone: '',
+      };
+  res.status(200).json({ success: true, data });
 }));
 
 // @route   PUT /api/settings
