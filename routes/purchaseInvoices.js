@@ -105,9 +105,13 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     paidAmount: Number.isNaN(paidAmount) ? 0 : Math.max(0, paidAmount),
   });
 
-  // Update supplier totals and balance
+  // Update supplier: use مبلغ الجمله as total when provided, else items total
   const paid = Number.isNaN(paidAmount) ? 0 : Math.max(0, paidAmount);
-  supplier.totalPurchases += totalAmount;
+  const invoiceTotal =
+    wholesaleAmount != null && Number(wholesaleAmount) > 0
+      ? Number(wholesaleAmount)
+      : totalAmount;
+  supplier.totalPurchases += invoiceTotal;
   supplier.totalPaid += paid;
   supplier.balance = supplier.totalPurchases - supplier.totalPaid;
   await supplier.save();
@@ -206,16 +210,20 @@ router.put('/:id/payment', protect, asyncHandler(async (req, res) => {
     });
   }
   
+  const baseTotal =
+    invoice.wholesaleAmount > 0
+      ? invoice.wholesaleAmount
+      : invoice.totalAmount;
   const oldPaidAmount = invoice.paidAmount;
   invoice.paidAmount += amount;
-  
-  if (invoice.paidAmount > invoice.totalAmount) {
+
+  if (invoice.paidAmount > baseTotal) {
     return res.status(400).json({
       success: false,
-      error: 'المبلغ المدفوع أكبر من إجمالي الفاتورة',
+      error: 'المبلغ المدفوع أكبر من مبلغ الجمله',
     });
   }
-  
+
   await invoice.save();
   
   // Update supplier

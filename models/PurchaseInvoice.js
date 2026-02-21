@@ -51,10 +51,11 @@ const purchaseInvoiceSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'مبلغ الجمله يجب أن يكون موجباً'],
   },
+  // المدفوع - input for amount paid
   paidAmount: {
     type: Number,
     default: 0,
-    min: [0, 'المبلغ المدفوع يجب أن يكون موجباً'],
+    min: [0, 'المدفوع يجب أن يكون موجباً'],
   },
   remainingAmount: {
     type: Number,
@@ -78,19 +79,22 @@ const purchaseInvoiceSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Calculate remaining amount before saving
+// Total = مبلغ الجمله - المدفوع (remaining). Use wholesaleAmount as base when set.
 purchaseInvoiceSchema.pre('save', function(next) {
-  this.remainingAmount = this.totalAmount - this.paidAmount;
-  
-  // Update status based on payment
+  const baseTotal =
+    this.wholesaleAmount != null && this.wholesaleAmount > 0
+      ? this.wholesaleAmount
+      : this.totalAmount;
+  this.remainingAmount = Math.max(0, baseTotal - this.paidAmount);
+
   if (this.paidAmount === 0) {
     this.status = 'غير مدفوعة';
-  } else if (this.paidAmount >= this.totalAmount) {
+  } else if (this.paidAmount >= baseTotal) {
     this.status = 'مدفوعة';
   } else {
     this.status = 'جزئية';
   }
-  
+
   next();
 });
 
